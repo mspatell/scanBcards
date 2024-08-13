@@ -167,5 +167,3 @@ def delete_card(user_id, card_id):
 def get_card(user_id, card_id):
     """Query a specific card by id"""
     return dynamo_service.get_card(user_id, card_id)
-# ation for more examples.
-#
