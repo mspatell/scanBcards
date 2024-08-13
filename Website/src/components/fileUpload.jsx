@@ -131,7 +131,7 @@ function FileUpload(props) {
     <div className="body">
       <div className="container">
         
-        <h1>Choose a card image</h1>
+        <h1>Scan Package</h1>
 
         <input
           id="file"
