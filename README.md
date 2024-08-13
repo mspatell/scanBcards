@@ -1,6 +1,4 @@
 # ScanBcards
-
-# Description
 This project used NER technology to extract text from object such as images. We extensively used aws services to store and manage data.
 
 ## Overview
