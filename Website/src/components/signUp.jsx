@@ -1,7 +1,7 @@
 import React, { useState }  from 'react';
+// import {CognitoUserPool} from "amazon-cognito-identity-js";
 
 import UserPool from "../userPool";
-import {CognitoUserPool} from "amazon-cognito-identity-js";
 
 function SignUp(props) {
 

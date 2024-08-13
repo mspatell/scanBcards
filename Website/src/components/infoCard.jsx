@@ -41,6 +41,7 @@ function InfoCard(props) {
         Accept: "application/json",
         "Content-Type": "application/json",
       },
+      
       body: JSON.stringify({
         card_id: null,
         user_id: localStorage.getItem("user_sub") || "",
@@ -74,7 +75,9 @@ function InfoCard(props) {
   return (
     <div>
       <div className="form">
+
         <div className="title">Business Card Details</div>
+
         <div className="input-container ic1">
           <input
             id="name"
@@ -88,6 +91,7 @@ function InfoCard(props) {
             Name
           </label>
         </div>
+
         <div className="input-container ic2">
           <input
             id="phone"
@@ -101,6 +105,7 @@ function InfoCard(props) {
             Phone
           </label>
         </div>
+
         <div className="input-container ic2">
           <input
             id="email"
@@ -114,6 +119,7 @@ function InfoCard(props) {
             Email
           </label>
         </div>
+
         <div className="input-container ic2">
           <input
             id="website"
@@ -127,6 +133,7 @@ function InfoCard(props) {
             Website
           </label>
         </div>
+
         <div className="input-container ic2">
           <input
             id="address"
@@ -140,10 +147,12 @@ function InfoCard(props) {
             Address
           </label>
         </div>
+
         <button type="text" className="submit" onClick={() => onSubmit()}>
           submit
         </button>
       </div>
+
       <div>
         <Modal
           open={open}
@@ -161,6 +170,7 @@ function InfoCard(props) {
           </Box>
         </Modal>
       </div>
+
       <div style={{ height: "40px" }}></div>
     </div>
   );
