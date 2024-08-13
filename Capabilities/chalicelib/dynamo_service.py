@@ -17,7 +17,7 @@ class DynamoService:
             table_name (str): Table name in DynamoDB service
         """
         self.table_name = table_name
-        self.dynamodb = boto3.client('dynamodb','us-east-1')
+        self.dynamodb = boto3.client('dynamodb','ca-central-1')
 
     def store_card(self, card: BusinessCard):
         """Creates a new card record
