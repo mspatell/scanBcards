@@ -12,6 +12,10 @@ import base64
 import json
 from urllib.parse import parse_qs
 
+from google.cloud import vision
+import io
+import requests
+
 #####
 # chalice app configuration
 #####
@@ -39,7 +43,7 @@ def upload_image():
     request_data = json.loads(app.current_request.raw_body)
     file_name = request_data['filename']
     file_bytes = base64.b64decode(request_data['filebytes'])
-    print("file_bytes", file_bytes)
+    # print("file_bytes", file_bytes)
     image_info = storage_service.upload_file(file_bytes, file_name)
 
     return image_info
@@ -51,37 +55,69 @@ def home():
     print("hello")
 
 
+@app.route('/images/{image_id}/extract_info',methods=['POST'], cors=True)
+def extract_info(image_id):
+    req = app.current_request.json_body
 
+    file_url = req.get('fileUrl')
+    file_data = requests.get(file_url)
+    if file_data.status_code == 200:
+        image_data = file_data.content
+        client = vision.ImageAnnotatorClient()
+
+        image = vision.Image(content=image_data)
+        response = client.text_detection(image=image)
+        texts = response.text_annotations
+
+        if not texts:
+            return {'error': 'No text detected in the image.'}, 400
+
+        # Combine all detected text into a single string
+        ner_text = ' '.join([text.description for text in texts])
+
+        ner_lines = named_entity_recognition_service.detect_entities(ner_text)
+
+        with open(f'{image_id}_extracted_texts.txt', 'w', encoding='utf-8') as f:
+            f.write(str(ner_lines))
+
+    
+    else:
+        return {'error': 'Failed to fetch the file from the provided URL.'}, 400
+
+    if response.error.message:
+        raise Exception(f'{response.error.message}')
+
+    # print("Vertices",vertices)
+    return ner_lines
 
 @app.route('/images/{image_id}/recognize_entities', methods=['POST'], cors=True)
 def recognize_image_entities(image_id):
     """detects then extracts named entities from text in the specified image"""
 
     MIN_CONFIDENCE = 80.0
-
+    # print("Entered Recognize image entities function")
+    # print("ImageID",image_id)
     text_lines = textract_service.detect_text(image_id)
     ner_lines = []
 
     ner_text = ""
     recognized_lines = []
-
+    # print(text_lines)
     # appending lines with confidence score > 80 to an empty list
     for line in text_lines:
         if float(line['confidence']) >= MIN_CONFIDENCE:
-            recognized_lines.append(
-                line['text']
-            )
+            recognized_lines.append(line['text'])
 
-    print(recognized_lines)
+    # print("Recognized Lines",recognized_lines)
 
     # appending all recognized lines together to form a text string
     for i in recognized_lines:
         ner_text = ner_text + " " + i
-    print(ner_text)
-
+    print("ner text",ner_text)
+    
     # calling the named_entity_recognition_service to detected entities from the recognized text
     ner_lines = named_entity_recognition_service.detect_entities(ner_text)
-    print(ner_lines, "\n")
+    # print("ner lines",ner_lines, "\n")
 
     return ner_lines
 
@@ -130,7 +166,9 @@ def post_card():
                         req_body['company_website'],
                         req_body['company_address'],
                         req_body['image_storage'])
+    print("Card",card)
     result = dynamo_service.store_card(card) # True  / False
+    print(result)
     new_card_id = card.card_id # Created by the service
     return new_card_id
 

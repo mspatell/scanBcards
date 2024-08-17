@@ -101,16 +101,19 @@ function FileUpload(props) {
         let fileId = result.fileId;
         let fileUrl = result.fileUrl;
 
-        fetch(serverUrl + "/images/" + fileId + "/recognize_entities", {
+        fetch(serverUrl + "/images/" + fileId + "/extract_info", {
           method: "POST",
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
           },
-          body: {},
+          body: JSON.stringify({
+            fileUrl: fileUrl,
+          }),
         })
           .then((response) => response.json())
           .then((res) => {
+            // console.log(res);
             setCardDetails({
               name: res.name && res.name[0],
               address: res.address && res.address[0],
