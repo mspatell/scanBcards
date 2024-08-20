@@ -33,6 +33,13 @@ dynamo_service = DynamoService(table_name)
 #####
 # RESTful endpoints
 #####
+@app.route('/home', methods=['GET'], cors=True)
+def home():
+    """processes file upload and saves file to storage service"""
+    print("hello")
+    return {"message": "Hello from the Capabilities app!"}
+
+
 @app.route('/images', methods=['POST'], cors=True)
 def upload_image():
     """processes file upload and saves file to storage service"""
@@ -43,14 +50,6 @@ def upload_image():
     image_info = storage_service.upload_file(file_bytes, file_name)
 
     return image_info
-
-
-@app.route('/home', methods=['GET'], cors=True)
-def home():
-    """processes file upload and saves file to storage service"""
-    print("hello")
-
-
 
 
 @app.route('/images/{image_id}/recognize_entities', methods=['POST'], cors=True)
@@ -68,9 +67,7 @@ def recognize_image_entities(image_id):
     # appending lines with confidence score > 80 to an empty list
     for line in text_lines:
         if float(line['confidence']) >= MIN_CONFIDENCE:
-            recognized_lines.append(
-                line['text']
-            )
+            recognized_lines.append(line['text'])
 
     print(recognized_lines)
 
@@ -135,15 +132,12 @@ def post_card():
     return new_card_id
 
 
-
 @app.route('/cards', methods=['PUT'], cors=True,
            content_types=['application/json'])
 def put_card():
     """Updates a card"""
     req_body = app.current_request.json_body
-
     # parsed = parse_qs(app.current_request.json_body)
-
 
     card = BusinessCard(req_body['user_id'],
                         req_body['card_id'],
@@ -162,6 +156,7 @@ def delete_card(user_id, card_id):
     print(card_id)
     """Deletes a card"""
     dynamo_service.delete_card(user_id, card_id)
+
 
 @app.route('/card/{user_id}/{card_id}', methods=['GET'], cors=True)
 def get_card(user_id, card_id):

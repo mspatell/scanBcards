@@ -6,8 +6,8 @@ class BusinessCard:
                  user_id=None,
                  card_id=None,
                  names='',
-                 telephone_numbers=[],
-                 email_addresses=[],
+                 telephone_numbers=None,
+                 email_addresses=None,
                  company_name='',
                  company_website='',
                  company_address='',
@@ -16,8 +16,8 @@ class BusinessCard:
         self.user_id = user_id
         self.card_id = card_id
         self.names = str(names)
-        self.telephone_numbers = telephone_numbers
-        self.email_addresses = email_addresses
+        self.telephone_numbers = telephone_numbers if telephone_numbers is not None else []
+        self.email_addresses = email_addresses if email_addresses is not None else []
         self.company_name = company_name
         self.company_website = company_website
         self.company_address = company_address
@@ -33,38 +33,31 @@ class BusinessCard:
         return response
 
     def __repr__(self):
-        # return self.names
-        return json.dumps(self,
-                          default=lambda o: o.__dict__, sort_keys=True, indent=4)
+        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)
 
     def __str__(self):
-        # return self.names
-        return json.dumps(self,
-                          default=lambda o: o.__dict__, sort_keys=True, indent=4)
+        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)
 
     def toDynamoFormat(self, isUpdate=False):
+        """Converts the BusinessCard object to a format suitable for DynamoDB"""
 
-        value = {
+        item = {
             'user_id': {'S': str(self.user_id)},
             'card_id': {'S': str(self.card_id)},
             'card_names': {'S': self.names},
-            'telephone_numbers': {'SS': [str(tn) for tn in self.telephone_numbers]},
-            'email_addresses': {'SS': self.email_addresses},
             'company_name': {'S': self.company_name},
             'company_website': {'S': str(self.company_website)},
             'company_address': {'S': self.company_address},
             'image_storage': {'S': self.image_storage},
         }
 
+        # Add telephone_numbers and email_addresses if they are not empty
+        if self.telephone_numbers:
+            item['telephone_numbers'] = {'SS': [str(tn) for tn in self.telephone_numbers]}
+        if self.email_addresses:
+            item['email_addresses'] = {'SS': self.email_addresses}
+
         if isUpdate:
-            value = {
-                # 'user_id': {'Value': {'S': self.user_id}, 'Action': 'PUT'},
-                'card_names': {'Value': {'S': self.names}, 'Action': 'PUT'},
-                'telephone_numbers': {'Value': {'SS': [str(tn) for tn in self.telephone_numbers]},  'Action': 'PUT'},
-                'email_addresses': {'Value': {'SS': self.email_addresses},  'Action': 'PUT'},
-                'company_name': {'Value': {'S': self.company_name},  'Action': 'PUT'},
-                'company_website': {'Value': {'S': str(self.company_website)},  'Action': 'PUT'},
-                'company_address': {'Value': {'S': self.company_address},  'Action': 'PUT'},
-                'image_storage': {'Value': {'S': self.image_storage},  'Action': 'PUT'}
-            }
-        return value
+            item = {k: {'Value': v, 'Action': 'PUT'} for k, v in item.items()}
+        
+        return item

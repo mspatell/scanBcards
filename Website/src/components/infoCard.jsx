@@ -1,15 +1,8 @@
 import React, { useState } from "react";
-// import PropTypes from 'prop-types';
-// import List from './list';
-
 import "../styles/infoCard.css";
-
 import Box from "@mui/material/Box";
-
 import Typography from "@mui/material/Typography";
 import Modal from "@mui/material/Modal";
-
-InfoCard.propTypes = {};
 
 const serverUrl = "http://127.0.0.1:8000";
 
@@ -27,13 +20,30 @@ const style = {
 
 function InfoCard(props) {
   const [open, setOpen] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
 
   const handleClose = () => {
     setOpen(false);
   };
 
   const onSubmit = () => {
-    console.log("props123: ", props.cardDetails);
+    console.log("Submitting card details: ", props.cardDetails);
+
+    const payload = {
+      card_id: props.cardDetails.card_id || "some-unique-id",
+      user_id: localStorage.getItem("user_sub") || "",
+      user_names: props.cardDetails.name ? [props.cardDetails.name] : [""],
+      telephone_numbers: props.cardDetails.phone
+        ? [props.cardDetails.phone]
+        : [""],
+      email_addresses: props.cardDetails.email
+        ? [props.cardDetails.email]
+        : [""],
+      company_name: props.cardDetails.name || "",
+      company_website: props.cardDetails.website || "",
+      company_address: props.cardDetails.address || "",
+      image_storage: props.cardDetails.image_url || "",
+    };
 
     fetch(serverUrl + "/cards", {
       method: "POST",
@@ -41,41 +51,46 @@ function InfoCard(props) {
         Accept: "application/json",
         "Content-Type": "application/json",
       },
-      
-      body: JSON.stringify({
-        card_id: null,
-        user_id: localStorage.getItem("user_sub") || "",
-        user_names: props.cardDetails.name ? [props.cardDetails.name] : [""],
-        telephone_numbers: props.cardDetails.phone
-          ? [props.cardDetails.phone]
-          : [""],
-        email_addresses: props.cardDetails.email
-          ? [props.cardDetails.email]
-          : [""],
-        company_name: props.cardDetails.name ? props.cardDetails.name : "",
-        company_website: props.cardDetails.website
-          ? props.cardDetails.website
-          : "",
-        company_address: props.cardDetails.address
-          ? props.cardDetails.address
-          : "",
-        image_storage: props.cardDetails.image_url,
-      }),
+      body: JSON.stringify(payload),
     })
-      .then((response) => response.json())
-      .then((res) => {
-        console.log("res555", res);
+      .then((response) => {
+        console.log("Raw response:", response); // Log the response object
+        if (!response.ok) {
+          throw new Error(
+            "Network response was not ok: " + response.statusText
+          );
+        }
+        return response.text(); // Get the response as text
+      })
+      .then((text) => {
+        console.log("Raw response text:", text); // Log the raw text response
+        // Check if response looks like JSON
+        if (text.trim().startsWith("{") || text.trim().startsWith("[")) {
+          try {
+            const jsonResponse = JSON.parse(text); // Attempt to parse the text as JSON
+            console.log("Parsed JSON:", jsonResponse);
+            setModalMessage("Card Details saved successfully!!!");
+          } catch (error) {
+            console.error("Error parsing JSON:", error.message);
+            setModalMessage("Received invalid JSON response from server.");
+          }
+        } else {
+          // Handle non-JSON responses
+          console.log("Received non-JSON response:", text);
+          setModalMessage("Card Details saved successfully with ID: " + text);
+        }
         setOpen(true);
       })
       .catch((error) => {
-        console.log(error);
+        console.error("Error during submission:", error.message);
+        setModalMessage("Failed to save card details. Please try again.");
         setOpen(true);
       });
   };
+
   return (
     <div>
       <div className="form">
-
         <div className="title">Business Card Details</div>
 
         <div className="input-container ic1">
@@ -85,7 +100,7 @@ function InfoCard(props) {
             type="text"
             placeholder=" "
             onChange={(event) => props.handleChangeInput(event, "name")}
-            value={props.cardDetails.name ? props.cardDetails.name : ""}
+            value={props.cardDetails.name || ""}
           />
           <label htmlFor="name" className="placeholder">
             Name
@@ -99,7 +114,7 @@ function InfoCard(props) {
             type="text"
             placeholder=" "
             onChange={(event) => props.handleChangeInput(event, "phone")}
-            value={props.cardDetails.phone ? props.cardDetails.phone : ""}
+            value={props.cardDetails.phone || ""}
           />
           <label htmlFor="phone" className="placeholder">
             Phone
@@ -113,7 +128,7 @@ function InfoCard(props) {
             type="text"
             placeholder=" "
             onChange={(event) => props.handleChangeInput(event, "email")}
-            value={props.cardDetails.email ? props.cardDetails.email : ""}
+            value={props.cardDetails.email || ""}
           />
           <label htmlFor="email" className="placeholder">
             Email
@@ -127,7 +142,7 @@ function InfoCard(props) {
             type="text"
             placeholder=" "
             onChange={(event) => props.handleChangeInput(event, "website")}
-            value={props.cardDetails.website ? props.cardDetails.website : ""}
+            value={props.cardDetails.website || ""}
           />
           <label htmlFor="website" className="placeholder">
             Website
@@ -141,35 +156,33 @@ function InfoCard(props) {
             type="text"
             placeholder=" "
             onChange={(event) => props.handleChangeInput(event, "address")}
-            value={props.cardDetails.address ? props.cardDetails.address : ""}
+            value={props.cardDetails.address || ""}
           />
           <label htmlFor="address" className="placeholder">
             Address
           </label>
         </div>
 
-        <button type="text" className="submit" onClick={() => onSubmit()}>
-          submit
+        <button type="text" className="submit" onClick={onSubmit}>
+          Submit
         </button>
       </div>
 
-      <div>
-        <Modal
-          open={open}
-          onClose={() => handleClose()}
-          aria-labelledby="modal-modal-title"
-          aria-describedby="modal-modal-description"
-        >
-          <Box sx={style}>
-            <Typography id="modal-modal-title" variant="h6" component="h2">
-              Success
-            </Typography>
-            <Typography id="modal-modal-description" sx={{ mt: 2 }}>
-              Card Details saved successfully!!!
-            </Typography>
-          </Box>
-        </Modal>
-      </div>
+      <Modal
+        open={open}
+        onClose={handleClose}
+        aria-labelledby="modal-modal-title"
+        aria-describedby="modal-modal-description"
+      >
+        <Box sx={style}>
+          <Typography id="modal-modal-title" variant="h6" component="h2">
+            {modalMessage.includes("success") ? "Success" : "Error"}
+          </Typography>
+          <Typography id="modal-modal-description" sx={{ mt: 2 }}>
+            {modalMessage}
+          </Typography>
+        </Box>
+      </Modal>
 
       <div style={{ height: "40px" }}></div>
     </div>

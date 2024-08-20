@@ -42,19 +42,37 @@ const getSorter = (data) => {
 
 const service = {
   fetchItems: (payload) => {
-    let user_id = localStorage.getItem("user_sub");
-    let promise = fetch(serverUrl + "/cards/" + user_id, {
+    const user_id = localStorage.getItem("user_sub");
+    if (!user_id) {
+      return Promise.reject(new Error("User ID not found"));
+    }
+
+    return fetch(`${serverUrl}/cards/`, {
       method: "GET",
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
       },
-    }).then((response) => response.json());
-
-    return Promise.resolve(promise);
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Error fetching items: ${response.statusText}`);
+        }
+        return response.json();
+      })
+      .catch((error) => {
+        console.error("There was a problem with the fetch operation:", error);
+        return [];
+      });
   },
+
   create: (card) => {
-    let promise = fetch(serverUrl + "/cards", {
+    const user_id = localStorage.getItem("user_sub");
+    if (!user_id) {
+      return Promise.reject(new Error("User ID not found"));
+    }
+
+    return fetch(`${serverUrl}/cards`, {
       method: "POST",
       headers: {
         Accept: "application/json",
@@ -62,51 +80,76 @@ const service = {
       },
       body: JSON.stringify({
         card_id: null,
-        user_id: localStorage.getItem("user_sub"),
+        user_id,
         user_names: null,
         telephone_numbers: card.phone ? [card.phone] : [""],
         email_addresses: card.email ? [card.email] : [""],
-        company_name: card.name ? card.name : "",
-        company_website: card.website ? card.website : "",
-        company_address: card.address ? card.address : "",
-        image_storage: card.image_url ? card.image_url : "",
+        company_name: card.name || "",
+        company_website: card.website || "",
+        company_address: card.address || "",
+        image_storage: card.image_url || "",
       }),
-    }).then((response) => response.json());
-
-    return Promise.resolve(promise);
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Error creating item: ${response.statusText}`);
+        }
+        return response.json();
+      })
+      .catch((error) => {
+        console.error("There was a problem with the fetch operation:", error);
+      });
   },
-  update: (data) => {
-    console.log("data123", data);
 
-    let user_id = localStorage.getItem("user_sub");
-    data["user_id"] = user_id;
-    let promise = fetch(serverUrl + "/cards", {
+  update: (data) => {
+    const user_id = localStorage.getItem("user_sub");
+    if (!user_id) {
+      return Promise.reject(new Error("User ID not found"));
+    }
+
+    data.user_id = user_id;
+
+    return fetch(`${serverUrl}/cards`, {
       method: "PUT",
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
       },
       body: JSON.stringify(data),
-    }).then((response) => response.json());
-
-    return Promise.resolve(promise);
-
-    // const card = cards.find(t => t.id === data.id);
-    // card.title = data.title;
-    // card.description = data.description;
-    // return Promise.resolve(card);
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Error updating item: ${response.statusText}`);
+        }
+        return response.json();
+      })
+      .catch((error) => {
+        console.error("There was a problem with the fetch operation:", error);
+      });
   },
+
   delete: (data) => {
-    let user_id = localStorage.getItem("user_sub");
-    let promise = fetch(serverUrl + "/cards/" + user_id + "/" + data.card_id, {
+    const user_id = localStorage.getItem("user_sub");
+    if (!user_id) {
+      return Promise.reject(new Error("User ID not found"));
+    }
+
+    return fetch(`${serverUrl}/cards/${user_id}/${data.card_id}`, {
       method: "DELETE",
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
       },
-    }).then((response) => response.json());
-
-    return Promise.resolve(promise);
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Error deleting item: ${response.statusText}`);
+        }
+        return response.json();
+      })
+      .catch((error) => {
+        console.error("There was a problem with the fetch operation:", error);
+      });
   },
 };
 
@@ -121,21 +164,18 @@ function List(props) {
     if (!localStorage.getItem("user_sub")) {
       window.location = "/login";
     }
-  });
+  }, []);
 
   const handleSearchChange = (event) => {
     let searchTerm = event.target.value;
     setSearch(searchTerm);
 
-    service.fetchItems();
+    service.fetchItems(); // Adjusted this to handle search if applicable
   };
 
   return (
     <div>
       <div style={styles.container}>
-        {/* <div className="input-container ic1" style={{ border: "2px solid grey"}}>
-                <input id="search" className="input" value={search} onChange={(e)=>handleSearchChange(e)} type="text" placeholder="Search " />
-            </div> */}
         <CRUDTable
           caption="Cards"
           fetchItems={(payload) => service.fetchItems(payload)}
@@ -148,53 +188,60 @@ function List(props) {
             <Field name="website" label="Website" />
             <Field
               name="address"
-              label="address"
+              label="Address"
               render={DescriptionRenderer}
             />
           </Fields>
-          {/* <CreateForm
-                title="Card Creation"
-                message="Create a new card!"
-                trigger="Create Card"
-                onSubmit={(card) => {service.create(card)}}
-                submitText="Create"
-              /> */}
+
+          <CreateForm
+            title="Card Creation"
+            message="Create a new card!"
+            trigger="Create Card"
+            onSubmit={(card) => service.create(card)}
+            submitText="Create"
+            validate={(values) => {
+              const errors = {};
+              if (!values.name) {
+                errors.name = "Please provide a name";
+              }
+              if (!values.phone) {
+                errors.phone = "Please provide a phone number";
+              }
+              return errors;
+            }}
+          />
 
           <UpdateForm
             title="Card Update Process"
-            message="Update task"
+            message="Update card details"
             trigger="Update"
             onSubmit={(card) => service.update(card)}
             submitText="Update"
-            // validate={(values) => {
-            //   const errors = {};
-
-            //   if (!values.id) {
-            //     errors.id = 'Please, provide id';
-            //   }
-
-            //   if (!values.name) {
-            //     errors.title = 'Please, provide task\'s title';
-            //   }
-
-            //   if (!values.email) {
-            //     errors.description = 'Please, provide task\'s description';
-            //   }
-
-            //   return errors;
-            // }}
+            validate={(values) => {
+              const errors = {};
+              if (!values.id) {
+                errors.id = "Please provide an id";
+              }
+              if (!values.name) {
+                errors.name = "Please provide a name";
+              }
+              if (!values.email) {
+                errors.email = "Please provide an email";
+              }
+              return errors;
+            }}
           />
 
           <DeleteForm
             title="Card Delete Process"
-            message="Are you sure you want to delete the task?"
+            message="Are you sure you want to delete the card?"
             trigger="Delete"
             onSubmit={(task) => service.delete(task)}
             submitText="Delete"
             validate={(values) => {
               const errors = {};
               if (!values.id) {
-                errors.id = "Please, provide id";
+                errors.id = "Please provide an id";
               }
               return errors;
             }}
