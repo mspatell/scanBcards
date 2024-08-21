@@ -47,7 +47,7 @@ const service = {
       return Promise.reject(new Error("User ID not found"));
     }
 
-    return fetch(`${serverUrl}/cards/`, {
+    return fetch(`${serverUrl}/cards/${user_id}`, {
       method: "GET",
       headers: {
         Accept: "application/json",

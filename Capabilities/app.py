@@ -83,13 +83,13 @@ def recognize_image_entities(image_id):
     return ner_lines
 
 
-@app.route('/cards/{user_id}', methods=['GET'], cors=True)
-def get_cards(user_id):
+# @app.route('/cards/{user_id}', methods=['GET'], cors=True)
+# def get_cards(user_id):
     """Get the paginated list of cards from a query"""
     cardlist_container = dynamo_service.search_cards(user_id)
     # This object has 3 main methods: get_list(), get_count(), get_numpages()
-    # cards = cardlist_container.get_list()
-    # print( [c.names for c in cards] )
+    cards = cardlist_container.get_list()
+    print( [c.names for c in cards] )
 
     cards_list = []
     index = 1
@@ -109,9 +109,38 @@ def get_cards(user_id):
 
     return cards_list
 
+@app.route('/cards/{user_id}', methods=['GET'], cors=True)
+def get_cards(user_id):
+    """Get the paginated list of cards from a query"""
+    try:
+        cardlist_container = dynamo_service.search_cards(user_id)
+        
+        # Check if cardlist_container is a dict or has a get_list method
+        cards = cardlist_container.get_list() if hasattr(cardlist_container, 'get_list') else cardlist_container['Items']
+        
+        cards_list = [
+            {
+                'id': index + 1,
+                'card_id': item.get('card_id', {}).get('S', ''),
+                'name': item.get('company_name', {}).get('S', ''),
+                'phone': item.get('telephone_numbers', {}).get('SS', [''])[0],
+                'email': item.get('email_addresses', {}).get('SS', [''])[0],
+                'website': item.get('company_website', {}).get('S', ''),
+                'address': item.get('company_address', {}).get('S', ''),
+                'image_storage': item.get('image_storage', {}).get('S', '')
+            }
+            for index, item in enumerate(cards)
+        ]
 
-@app.route('/cards', methods=['POST'], cors=True,
-           content_types=['application/json'])
+        return cards_list
+    
+    except Exception as e:
+        # Log the error and return a meaningful error response
+        print(f"Error fetching cards for user {user_id}: {str(e)}")
+        return {'error': 'Failed to retrieve cards'}, 500
+
+
+@app.route('/cards', methods=['POST'], cors=True, content_types=['application/json'])
 def post_card():
     """Creates a card"""
 
@@ -132,8 +161,7 @@ def post_card():
     return new_card_id
 
 
-@app.route('/cards', methods=['PUT'], cors=True,
-           content_types=['application/json'])
+@app.route('/cards', methods=['PUT'], cors=True, content_types=['application/json'])
 def put_card():
     """Updates a card"""
     req_body = app.current_request.json_body
