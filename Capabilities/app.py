@@ -85,29 +85,29 @@ def recognize_image_entities(image_id):
 
 # @app.route('/cards/{user_id}', methods=['GET'], cors=True)
 # def get_cards(user_id):
-    """Get the paginated list of cards from a query"""
-    cardlist_container = dynamo_service.search_cards(user_id)
-    # This object has 3 main methods: get_list(), get_count(), get_numpages()
-    cards = cardlist_container.get_list()
-    print( [c.names for c in cards] )
+#     """Get the paginated list of cards from a query"""
+#     cardlist_container = dynamo_service.search_cards(user_id)
+#     # This object has 3 main methods: get_list(), get_count(), get_numpages()
+#     cards = cardlist_container.get_list()
+#     print( [c.names for c in cards] )
 
-    cards_list = []
-    index = 1
-    for item in cardlist_container['Items']:
-        obj = {
-            'id': index,
-            'card_id': item['card_id']['S'],
-            'name': item['company_name']['S'],
-            'phone': item['telephone_numbers']['SS'][0],
-            'email': item['email_addresses']['SS'][0],
-            'website': item['company_website']['S'],
-            'address': item['company_address']['S'],
-            'image_storage': item['image_storage']['S']
-        }
-        cards_list.append(obj)
-        index += 1
+#     cards_list = []
+#     index = 1
+#     for item in cardlist_container['Items']:
+#         obj = {
+#             'id': index,
+#             'card_id': item['card_id']['S'],
+#             'name': item['company_name']['S'],
+#             'phone': item['telephone_numbers']['SS'][0],
+#             'email': item['email_addresses']['SS'][0],
+#             'website': item['company_website']['S'],
+#             'address': item['company_address']['S'],
+#             'image_storage': item['image_storage']['S']
+#         }
+#         cards_list.append(obj)
+#         index += 1
 
-    return cards_list
+#     return cards_list
 
 @app.route('/cards/{user_id}', methods=['GET'], cors=True)
 def get_cards(user_id):
